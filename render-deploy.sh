@@ -9,6 +9,10 @@ echo "🚀 Starting Deployment Script..."
 # echo "Running composer..."
 # composer install --no-dev --optimize-autoloader --no-interaction
 
+echo "Clearing cache and configuration..."
+php artisan config:clear
+php artisan cache:clear
+
 echo "Caching configuration..."
 php artisan config:cache
 php artisan route:cache
