@@ -1,45 +1,30 @@
 name: Vercel Frontend Deployment
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [ "dev", "main" ]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [ "dev", "main" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: './client/package-lock.json'
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Deploy to Vercel
+        run: vercel deploy --yes --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./client
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: ./client
-
-      - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: ./client
-
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: ./client
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
