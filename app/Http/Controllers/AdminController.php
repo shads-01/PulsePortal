@@ -50,6 +50,8 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:255', 'regex:/^[\pL\s\-\.]+$/u'],
             'email' => ['required', 'email', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|aust\.edu|pulseportal\.com)$/'],
             'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+            'admin_role' => 'required|string|max:100',
+            'department' => 'required_unless:admin_role,Super Admin|nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
         ], [
             'email.regex' => 'Only gmail.com, yahoo.com, outlook.com, aust.edu, and pulseportal.com emails are allowed.',

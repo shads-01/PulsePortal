@@ -53,7 +53,7 @@ function SelectField({ icon, label, options, error, ...props }) {
                                 : "border-slate-200 focus:ring-blue-200 focus:border-blue-400"
                         }`}
                 >
-                    <option value="">Select {label}</option>
+                    <option value="">{props.placeholder || `Select ${label}`}</option>
                     {options.map((opt) => (
                         <option key={opt} value={opt}>
                             {opt}
@@ -83,9 +83,17 @@ export default function AddAdmin() {
     const [apiError, setApiError] = useState("");
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) {
-            setErrors({ ...errors, [e.target.name]: "" });
+        const { name, value } = e.target;
+        let newForm = { ...form, [name]: value };
+
+        // If Super Admin is selected, force department to empty
+        if (name === "admin_role" && value === "Super Admin") {
+            newForm.department = "";
+        }
+
+        setForm(newForm);
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: "" });
         }
     };
 
@@ -97,7 +105,11 @@ export default function AddAdmin() {
         if (form.password.length < 8)
             e.password = "Password must be at least 8 characters.";
         if (!form.admin_role) e.admin_role = "Admin role is required.";
-        if (!form.department) e.department = "Department is required.";
+
+        // Department is required only if NOT a Super Admin
+        if (form.admin_role !== "Super Admin" && !form.department) {
+            e.department = "Department is required.";
+        }
         return e;
     };
 
@@ -280,41 +292,43 @@ export default function AddAdmin() {
                             />
                         </div>
 
-                        {/* Admin Role */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Admin Role
-                            </label>
-                            <Input
-                                icon={<ShieldCheck size={16} />}
-                                placeholder="e.g. System Admin, Dept Admin"
-                                name="admin_role"
-                                value={form.admin_role}
-                                onChange={handleChange}
-                                error={errors.admin_role}
-                            />
-                        </div>
+                        {/* Admin Role Dropdown */}
+                        <SelectField
+                            label="Admin Role"
+                            icon={<ShieldCheck size={16} />}
+                            name="admin_role"
+                            value={form.admin_role}
+                            onChange={handleChange}
+                            error={errors.admin_role}
+                            options={[
+                                "Super Admin",
+                                "IT Support Admin",
+                                "Department Admin",
+                                "Front Desk Admin",
+                            ]}
+                        />
 
                         {/* Department Dropdown */}
                         <SelectField
                             label="Department"
                             icon={<Building2 size={16} />}
                             name="department"
-                            value={form.department}
+                            value={form.admin_role === "Super Admin" ? "" : form.department}
                             onChange={handleChange}
                             error={errors.department}
+                            disabled={form.admin_role === "Super Admin"}
+                            placeholder={form.admin_role === "Super Admin" ? "All Departments (Default)" : "Select Department"}
                             options={[
-                                "Administration",
-                                "IT Support",
                                 "Cardiology",
                                 "Neurology",
                                 "Orthopedics",
                                 "Pediatrics",
                                 "Oncology",
                                 "Radiology",
-                                "Emergency",
-                                "General Surgery",
                                 "Nursing",
+                                "General",
+                                "Dermatology",
+                                "Psychiatry",
                             ]}
                         />
                     </div>
