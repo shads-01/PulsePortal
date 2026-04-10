@@ -25,6 +25,8 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Expose port 80
 EXPOSE 80
 
-# Use our custom deployment script
-RUN chmod +x /var/www/html/render-deploy.sh
-ENTRYPOINT ["/var/www/html/render-deploy.sh"]
+# Use the image's built-in script feature instead of overriding ENTRYPOINT
+# The image will run scripts in /var/www/html/scripts/ when RUN_SCRIPTS=1
+RUN mkdir -p /var/www/html/scripts
+COPY render-deploy.sh /var/www/html/scripts/run.sh
+RUN chmod +x /var/www/html/scripts/run.sh

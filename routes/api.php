@@ -53,3 +53,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('stats',          [AdminController::class, 'getStats']);
     });
 });
+// ── Catch-all OPTIONS route safety net ────────────────────────
+Route::options('{any}', function() {
+    return response('', 200);
+})->where('any', '.*');

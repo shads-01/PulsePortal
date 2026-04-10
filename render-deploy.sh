@@ -22,5 +22,4 @@ echo "Running migrations..."
 # --force is required for production
 php artisan migrate --force
 
-echo "🚀 Starting Web Server..."
-/start.sh
+echo "🚀 Deployment steps completed successfully!"
