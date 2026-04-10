@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Services\SocialAuthService;
+use Illuminate\Support\Facades\Log;
 
 class SocialAuthController extends Controller
 {
@@ -50,6 +51,11 @@ class SocialAuthController extends Controller
 
             return redirect("{$frontendUrl}/auth/google/callback?token={$token}&user={$userData}");
         } catch (\Exception $e) {
+            Log::error('Google Auth Error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace'     => $e->getTraceAsString()
+            ]);
+
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             $error       = urlencode('Google authentication failed. Please try again.');
 
