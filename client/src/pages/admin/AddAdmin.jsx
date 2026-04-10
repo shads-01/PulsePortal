@@ -11,6 +11,8 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
+    Building2,
+    ShieldCheck,
 } from "lucide-react";
 import adminService from "../../api/adminService";
 
@@ -32,6 +34,38 @@ function Input({ icon, error, ...props }) {
     );
 }
 
+function SelectField({ icon, label, options, error, ...props }) {
+    return (
+        <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+                {label}
+            </label>
+            <div className="relative">
+                <div className="absolute left-3 top-3 text-slate-400">
+                    {icon}
+                </div>
+                <select
+                    {...props}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm appearance-none bg-white focus:outline-none focus:ring-2 transition-all
+                        ${
+                            error
+                                ? "border-red-300 focus:ring-red-200"
+                                : "border-slate-200 focus:ring-blue-200 focus:border-blue-400"
+                        }`}
+                >
+                    <option value="">Select {label}</option>
+                    {options.map((opt) => (
+                        <option key={opt} value={opt}>
+                            {opt}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            {error && <p className="text-red-500 text-xs mt-1 ml-1">{error}</p>}
+        </div>
+    );
+}
+
 export default function AddAdmin() {
     const [showPass, setShowPass] = useState(false);
     const [form, setForm] = useState({
@@ -39,6 +73,8 @@ export default function AddAdmin() {
         email: "",
         password: "",
         phone: "",
+        admin_role: "",
+        department: "",
     });
 
     const [errors, setErrors] = useState({});
@@ -60,6 +96,8 @@ export default function AddAdmin() {
         if (!form.password) e.password = "Password is required.";
         if (form.password.length < 8)
             e.password = "Password must be at least 8 characters.";
+        if (!form.admin_role) e.admin_role = "Admin role is required.";
+        if (!form.department) e.department = "Department is required.";
         return e;
     };
 
@@ -77,7 +115,14 @@ export default function AddAdmin() {
         try {
             await adminService.createAdmin(form);
             setSuccess(true);
-            setForm({ name: "", email: "", password: "", phone: "" });
+            setForm({
+                name: "",
+                email: "",
+                password: "",
+                phone: "",
+                admin_role: "",
+                department: "",
+            });
         } catch (err) {
             if (err.response?.data?.errors) {
                 const firstError = Object.values(
@@ -234,6 +279,44 @@ export default function AddAdmin() {
                                 onChange={handleChange}
                             />
                         </div>
+
+                        {/* Admin Role */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Admin Role
+                            </label>
+                            <Input
+                                icon={<ShieldCheck size={16} />}
+                                placeholder="e.g. System Admin, Dept Admin"
+                                name="admin_role"
+                                value={form.admin_role}
+                                onChange={handleChange}
+                                error={errors.admin_role}
+                            />
+                        </div>
+
+                        {/* Department Dropdown */}
+                        <SelectField
+                            label="Department"
+                            icon={<Building2 size={16} />}
+                            name="department"
+                            value={form.department}
+                            onChange={handleChange}
+                            error={errors.department}
+                            options={[
+                                "Administration",
+                                "IT Support",
+                                "Cardiology",
+                                "Neurology",
+                                "Orthopedics",
+                                "Pediatrics",
+                                "Oncology",
+                                "Radiology",
+                                "Emergency",
+                                "General Surgery",
+                                "Nursing",
+                            ]}
+                        />
                     </div>
 
                     <motion.button

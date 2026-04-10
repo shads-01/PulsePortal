@@ -5,8 +5,11 @@ namespace App\Http\Services;
 use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Admin;
+use App\Mail\WelcomeDoctorMail;
+use App\Mail\AdminWelcomMail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Mail;
 
 class AdminService
 {
@@ -37,6 +40,8 @@ class AdminService
                 'is_available' => true,
             ]);
 
+            Mail::to($data['email'])->queue(new WelcomeDoctorMail($data['name'], $data['email'], $data['password']));
+
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -60,7 +65,11 @@ class AdminService
 
             Admin::create([
                 'user_id' => $user->id,
+                'admin_role' => $data['admin_role'],
+                'department' => $data['department'],
             ]);
+
+            Mail::to($data['email'])->queue(new AdminWelcomMail($data['name'], $data['email'], $data['admin_role'], $data['department'], $data['password']));
 
             return [
                 'id' => $user->id,
