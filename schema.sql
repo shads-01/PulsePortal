@@ -22,7 +22,8 @@ CREATE TABLE users (
     id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name               VARCHAR(255)    NOT NULL,
     email              VARCHAR(255)    NOT NULL,
-    password           VARCHAR(255)    NOT NULL,
+    password           VARCHAR(255)    NULL,
+    google_id          VARCHAR(255)    NULL,
     role               ENUM('patient','doctor','admin')
                                        NOT NULL DEFAULT 'patient',
     email_verified_at  TIMESTAMP       NULL,
@@ -30,7 +31,8 @@ CREATE TABLE users (
     created_at         TIMESTAMP       NULL,
     updated_at         TIMESTAMP       NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY users_email_unique (email)
+    UNIQUE KEY users_email_unique (email),
+    UNIQUE KEY users_google_id_unique (google_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
  
 -- ── TABLE 2: patients ───────────────────────────────────────────

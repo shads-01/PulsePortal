@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
@@ -13,6 +14,10 @@ Route::prefix('auth')->group(function () {
     Route::post('login',    [AuthController::class, 'login']);
     Route::post('logout',   [AuthController::class, 'logout'])->middleware('auth:api');
     Route::get('me',        [AuthController::class, 'me'])->middleware('auth:api');
+
+    // Google OAuth
+    Route::get('google/redirect', [SocialAuthController::class, 'redirectToGoogle']);
+    Route::get('google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
 });
 
 // ── Protected routes ──────────────────────────────────────────

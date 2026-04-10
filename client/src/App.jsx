@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AuthPage from "./pages/AuthPage";
+import GoogleCallback from "./pages/GoogleCallback";
 import HomePage from "./pages/HomePage";
 import authService from "./api/authService";
 import { patientRoutes } from "./routes/patientRoutes";
@@ -36,6 +37,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
                 {/* Patient */}
                 <Route

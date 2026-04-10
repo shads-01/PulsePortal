@@ -10,7 +10,7 @@ const NAV_LINKS = {
         { name: "My Appointments", path: "appointments" },
         { name: "Book Appointment", path: "book-appointment" },
     ],
-    doctor: [{ name: "Appointments", path: "doc-appointments" }],
+    doctor: [{ name: "Appointments", path: "appointments" }],
     admin: [
         { name: "Add Doctor", path: "add-doctor" },
         { name: "Add Admin", path: "add-admin" },

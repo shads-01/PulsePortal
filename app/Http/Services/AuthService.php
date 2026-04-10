@@ -34,6 +34,13 @@ class AuthService
 
     public function login(array $credentials): ?array
     {
+        // Check if the user exists but has no password (Google-only account)
+        $user = User::where('email', $credentials['email'])->first();
+
+        if ($user && is_null($user->password)) {
+            throw new \Exception('This account uses Google Sign-In. Please use the "Continue with Google" button.');
+        }
+
         if (!$token = auth()->attempt($credentials)) {
             return null;
         }

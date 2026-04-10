@@ -89,7 +89,7 @@ export default function DoctorDashboard() {
                     </p>
                 </div>
 
-                <motion.button
+                {/* <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-2 px-5 py-3 rounded-full text-white font-semibold shadow-md"
@@ -99,7 +99,7 @@ export default function DoctorDashboard() {
                 >
                     <Plus size={18} />
                     New Appointment
-                </motion.button>
+                </motion.button> */}
             </motion.div>
 
             <div className="grid lg:grid-cols-3 gap-6">
@@ -274,7 +274,7 @@ export default function DoctorDashboard() {
                     </motion.div>
 
                     {/* All Upcoming Appointments */}
-                    <motion.div
+                    {/* <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
@@ -401,7 +401,7 @@ export default function DoctorDashboard() {
                                 ))
                             )}
                         </div>
-                    </motion.div>
+                    </motion.div> */}
                 </div>
 
                 {/* RIGHT SIDE */}
@@ -428,7 +428,7 @@ export default function DoctorDashboard() {
                     </motion.div>
 
                     {/* Appointment breakdown by status */}
-                    {!loading && appointments.length > 0 && (
+                    {/* {!loading && appointments.length > 0 && (
                         <motion.div
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -493,7 +493,7 @@ export default function DoctorDashboard() {
                                 })}
                             </div>
                         </motion.div>
-                    )}
+                    )} */}
                 </div>
             </div>
         </div>

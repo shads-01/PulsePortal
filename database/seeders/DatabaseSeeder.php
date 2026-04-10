@@ -81,6 +81,94 @@ class DatabaseSeeder extends Seeder
             'admin_notes'      => 'Scheduled at Room 204.',
         ]);
 
+                Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-15',
+    'appointment_time' => '09:00:00',
+    'type'             => 'in_person',
+    'status'           => 'pending',
+    'symptoms'         => 'Headache and dizziness',
+    'admin_notes'      => 'First visit',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-16',
+    'appointment_time' => '10:00:00',
+    'type'             => 'online',
+    'status'           => 'confirmed',
+    'symptoms'         => 'Fever and cough',
+    'admin_notes'      => 'Follow-up required',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-17',
+    'appointment_time' => '11:00:00',
+    'type'             => 'in_person',
+    'status'           => 'completed',
+    'symptoms'         => 'Chest pain',
+    'admin_notes'      => 'ECG done',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-18',
+    'appointment_time' => '12:00:00',
+    'type'             => 'online',
+    'status'           => 'cancelled',
+    'symptoms'         => 'Back pain',
+    'admin_notes'      => 'Cancelled by patient',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-19',
+    'appointment_time' => '13:00:00',
+    'type'             => 'in_person',
+    'status'           => 'pending',
+    'symptoms'         => 'Stomach pain',
+    'admin_notes'      => 'Waiting for test',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-20',
+    'appointment_time' => '14:00:00',
+    'type'             => 'online',
+    'status'           => 'confirmed',
+    'symptoms'         => 'Skin allergy',
+    'admin_notes'      => 'Prescribed medicine',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-21',
+    'appointment_time' => '15:00:00',
+    'type'             => 'in_person',
+    'status'           => 'completed',
+    'symptoms'         => 'BP checkup',
+    'admin_notes'      => 'Stable condition',
+]);
+
+Appointment::create([
+    'patient_id'       => $patient->id,
+    'doctor_id'        => $doctor->id,
+    'appointment_date' => '2025-03-22',
+    'appointment_time' => '16:00:00',
+    'type'             => 'online',
+    'status'           => 'pending',
+    'symptoms'         => 'Migraine',
+    'admin_notes'      => 'MRI suggested',
+]);
+
         // Sample visit note
         VisitNote::create([
             'appointment_id' => $appointment->id,

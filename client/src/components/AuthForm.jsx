@@ -5,11 +5,12 @@
 //   • Toggle between Login and Sign Up modes
 // ─────────────────────────────────────────────────────────────
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ROLES } from "../config/roles";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import authService from "../api/authService";
+import api from "../api/axios";
 
 // Handling different role tabs
 function RoleTabs({ activeRole, onRoleChange, mode }) {
@@ -120,6 +121,7 @@ function InputField({
 export default function AuthForm({ activeRole, onRoleChange }) {
     const [internalRole, setInternalRole] = useState("patient");
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const role = activeRole || internalRole;
 
@@ -141,6 +143,25 @@ export default function AuthForm({ activeRole, onRoleChange }) {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Pick up ?error= from URL (e.g. after failed Google callback)
+    useEffect(() => {
+        const urlError = searchParams.get("error");
+        if (urlError) {
+            setError(decodeURIComponent(urlError));
+        }
+    }, [searchParams]);
+
+    // Google OAuth handler
+    const handleGoogleLogin = async () => {
+        try {
+            const response = await api.get("/auth/google/redirect");
+            const googleUrl = response.data.data.url;
+            window.location.href = googleUrl; // Full page redirect to Google
+        } catch {
+            setError("Could not connect to Google. Please try again.");
+        }
+    };
 
     const toggleMode = () => {
         const newMode = mode === "login" ? "signup" : "login";
@@ -337,7 +358,7 @@ export default function AuthForm({ activeRole, onRoleChange }) {
                         />
 
                         {/* Forgot Password */}
-                        {mode === "login" && (
+                        {/* {mode === "login" && (
                             <div className="flex justify-end -mt-1">
                                 <button
                                     type="button"
@@ -347,7 +368,7 @@ export default function AuthForm({ activeRole, onRoleChange }) {
                                     Forgot password?
                                 </button>
                             </div>
-                        )}
+                        )} */}
 
                         {/* Error message */}
                         {error && (
@@ -386,18 +407,23 @@ export default function AuthForm({ activeRole, onRoleChange }) {
                         <div className="flex-1 h-px bg-slate-200" />
                     </div>
 
-                    {/* Google/ Facebook sign in */}
-                    <div className="grid grid-cols-2 gap-3">
-                        {["Google", "Facebook"].map((provider) => (
+                    {/* Google sign in */}
+                    <div className="flex justify-center">
+                        {["Google"].map((provider) => (
                             <motion.button
                                 key={provider}
                                 type="button"
+                                onClick={
+                                    provider === "Google"
+                                        ? handleGoogleLogin
+                                        : undefined
+                                }
                                 whileHover={{
                                     y: -2,
                                     backgroundColor: "rgba(241,245,249,1)",
                                 }}
                                 whileTap={{ scale: 0.97 }}
-                                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-slate-600 text-sm font-medium cursor-pointer font-sans border  outline-none focus:outline-none ring-0 focus:ring-0"
+                                className="flex items-center justify-center gap-2 py-2.5  px-6 rounded-xl text-slate-600 text-sm font-medium cursor-pointer font-sans border  outline-none focus:outline-none ring-0 focus:ring-0"
                                 style={{
                                     background: "rgba(248,250,252,0.8)",
                                     borderColor: "#E2E8F0",
