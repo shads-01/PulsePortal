@@ -18,8 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './client/package-lock.json'
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./client
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
