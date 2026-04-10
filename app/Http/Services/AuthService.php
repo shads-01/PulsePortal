@@ -38,9 +38,16 @@ class AuthService
             return null;
         }
 
+        $user = auth()->user();
+
+        // Update last login timestamp for Admins only
+        if ($user->role === 'admin' && $user->admin) {
+            $user->admin->update(['last_login_at' => now()]);
+        }
+
         return [
             'token' => $token,
-            'user'  => $this->formatUser(auth()->user()),
+            'user'  => $this->formatUser($user),
         ];
     }
 

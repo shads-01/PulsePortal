@@ -9,7 +9,11 @@ class Admin extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'admin_role', 'department'];
+    protected $fillable = ['user_id', 'admin_role', 'department', 'last_login_at'];
+    
+    protected $casts = [
+        'last_login_at' => 'datetime',
+    ];
 
     public function user()
     {
