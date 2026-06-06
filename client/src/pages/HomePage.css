@@ -1,0 +1,52 @@
+:root {
+  --primary-color: #0a5bbf;
+  --primary-hover:#0b4791 ;
+}
+
+/* Navbar logo */
+.nav-logo {
+  color:var(--primary-color);
+  font-size: 1.8rem; 
+  font-weight: bold;
+}
+
+/* Navbar links */
+.nav-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: color 0.25s;
+}
+
+.nav-link:hover {
+  color: var(--primary-hover);
+}
+
+/* Buttons */
+.primary-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 9999px; 
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  transition: background-color 0.25s;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-hover);
+  color: white;
+}
+
+.primary-icon {
+  color: var(--primary-color);
+}
+
+/* Footer links */
+.footer-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: color 0.25s;
+}
+
+.footer-link:hover {
+  color: var(--primary-hover);
+}

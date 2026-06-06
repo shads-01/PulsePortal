@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  /* color: rgba(255, 255, 255, 0.87); */
+  background-color: #eff6ff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+} */
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+} */
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  /* background-color: #1a1a1a; */
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+/* animated gradient border */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ai-border-rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+@keyframes ai-glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 4px 1px #0a5bbf, 0 0 12px 1px #127fec;
+  }
+
+  50% {
+    box-shadow: 0 0 4px 1px #0a5bbf5b, 0 0 12px 1px #127fec6b;
+  }
+}
+
+.ai-border-glow {
+  --angle: 0deg;
+  border: 2px solid transparent;
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(white, white) padding-box,
+    conic-gradient(from var(--angle), #f76855, #68f755, #6855f7, #f76855) border-box;
+  animation:
+    ai-border-rotate 3s linear infinite,
+    ai-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes float-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5), 0 8px 20px rgba(59, 130, 246, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0), 0 8px 28px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.ai-float-glow {
+  animation: float-pulse 2.4s ease-in-out infinite;
+}

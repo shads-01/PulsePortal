@@ -9,6 +9,8 @@ class Post extends Model
 {
     use HasFactory;
 
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'user_id',
         'title',
@@ -20,3 +22,4 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 }
+

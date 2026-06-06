@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('abilities')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at')->nullable();
-            $table->timestamps();
+            $table->timestamp('created_at')->nullable();
         });
     }
 
@@ -31,3 +31,4 @@ return new class extends Migration
         Schema::dropIfExists('personal_access_tokens');
     }
 };
+

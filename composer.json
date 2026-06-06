@@ -6,13 +6,18 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
+        "laravel/socialite": "^5.26",
         "laravel/tinker": "^2.8",
-        "lcobucci/jwt": "^4.0"
+        "lcobucci/jwt": "^4.0",
+        "pusher/pusher-php-server": "^7.2",
+        "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {
+        "doctrine/dbal": "^3.10",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
