@@ -10,6 +10,19 @@ services:
         networks:
             - pulseportal
 
+    queue:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        container_name: pulseportal_queue
+        command: sh -c "chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && chmod -R ug+rwx /var/www/storage /var/www/bootstrap/cache && php artisan queue:work database --tries=3 --sleep=1"
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - app
+        networks:
+            - pulseportal
+
     nginx:
         image: nginx:alpine
         container_name: pulseportal_nginx
