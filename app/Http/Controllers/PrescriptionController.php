@@ -29,10 +29,12 @@ class PrescriptionController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Doctor profile not found.'], 404);
         }
 
+        // Completed appointments (incl. after an ended online consultation)
+        // are still prescribable by the owning doctor; cancelled are not.
         $appointment = Appointment::where('id', $id)
             ->where('doctor_id', $doctor->id)
-            ->where('status', 'confirmed')
-            ->with(['patient.user', 'doctor.user'])
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->with(['patient.user', 'doctor.user', 'prescriptions'])
             ->first();
 
         if (!$appointment) {
@@ -40,6 +42,13 @@ class PrescriptionController extends Controller
                 'status'  => 'error',
                 'message' => 'Appointment not found, not yours, or already completed.',
             ], 404);
+        }
+
+        if ($appointment->prescriptions->isNotEmpty()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'A prescription has already been saved for this appointment.',
+            ], 409);
         }
 
         $request->validate([
@@ -82,14 +91,18 @@ class PrescriptionController extends Controller
         $pdf = Pdf::loadView('emails.patients.prescription', ['prescription' => $pdfData]);
         $pdfContent = $pdf->output();
 
-        // Send Email to Patient
+        // Send Email to Patient (non-fatal — prescription is already saved)
         $patientEmail = $appointment->patient->user->email;
         if ($patientEmail) {
-            Mail::to($patientEmail)->send(new SendPrescriptionToPatient(
-                $appointment->patient->user->name,
-                $pdfData,
-                $pdfContent
-            ));
+            try {
+                Mail::to($patientEmail)->send(new SendPrescriptionToPatient(
+                    $appointment->patient->user->name,
+                    $pdfData,
+                    $pdfContent
+                ));
+            } catch (\Throwable $e) {
+                \Log::warning('Prescription mail failed: ' . $e->getMessage());
+            }
         }
 
         return response()->json([

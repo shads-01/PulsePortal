@@ -819,6 +819,15 @@ class RoomAdmissionService
 
     private function mapDashboardAdmission(RoomAdmission $admission): array
     {
+        return $this->mapAdmission($admission, includeTimeline: false);
+    }
+
+    /**
+     * Shared mapper. Dashboard variant omits the timeline;
+     * admin variant includes it.
+     */
+    private function mapAdmission(RoomAdmission $admission, bool $includeTimeline = true): array
+    {
         $admission->loadMissing(['room', 'bed', 'patient.user', 'doctor.user']);
 
         $resolvedDoctorName = $admission->attending_doctor;
@@ -826,7 +835,7 @@ class RoomAdmissionService
             $resolvedDoctorName = $this->formatDoctorDisplayName($admission->doctor->user->name);
         }
 
-        return [
+        $data = [
             'id' => $admission->id,
             'admission_no' => $admission->admission_no,
             'patient_name' => $admission->patient_name,
@@ -855,44 +864,10 @@ class RoomAdmissionService
             'created_at' => optional($admission->created_at)?->toISOString(),
             'updated_at' => optional($admission->updated_at)?->toISOString(),
         ];
-    }
 
-    private function mapAdmission(RoomAdmission $admission): array
-    {
-        $admission->loadMissing(['room', 'bed', 'events', 'patient.user', 'doctor.user']);
-
-        $resolvedDoctorName = $admission->attending_doctor;
-        if ((!is_string($resolvedDoctorName) || trim($resolvedDoctorName) === '') && $admission->doctor?->user?->name) {
-            $resolvedDoctorName = $this->formatDoctorDisplayName($admission->doctor->user->name);
-        }
-
-        return [
-            'id' => $admission->id,
-            'admission_no' => $admission->admission_no,
-            'patient_name' => $admission->patient_name,
-            'patient_id' => $admission->patient_id,
-            'patient_identifier' => $admission->patient_identifier,
-            'patient_age' => $admission->patient_age,
-            'patient_gender' => $admission->patient_gender,
-            'contact_phone' => $admission->contact_phone,
-            'emergency_contact_name' => $admission->emergency_contact_name,
-            'emergency_contact_phone' => $admission->emergency_contact_phone,
-            'admission_type' => $admission->admission_type,
-            'department' => $admission->department,
-            'doctor_id' => $admission->doctor_id,
-            'attending_doctor' => $resolvedDoctorName,
-            'room_id' => $admission->room_id,
-            'room_number' => $admission->room?->room_number,
-            'bed_id' => $admission->bed_id,
-            'bed_label' => $admission->bed?->bed_code,
-            'payer_type' => $admission->payer_type,
-            'estimated_stay_days' => $admission->estimated_stay_days,
-            'priority' => $admission->priority,
-            'notes' => $admission->notes,
-            'status' => $admission->status,
-            'created_at' => optional($admission->created_at)?->toISOString(),
-            'updated_at' => optional($admission->updated_at)?->toISOString(),
-            'timeline' => $admission->events
+        if ($includeTimeline) {
+            $admission->loadMissing('events');
+            $data['timeline'] = $admission->events
                 ->map(function (RoomAdmissionEvent $event) {
                     return [
                         'id' => 'EV-' . $event->id,
@@ -903,8 +878,10 @@ class RoomAdmissionService
                     ];
                 })
                 ->values()
-                ->all(),
-        ];
+                ->all();
+        }
+
+        return $data;
     }
 
     private function nextAdmissionNo(): string

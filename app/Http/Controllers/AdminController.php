@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Services\AdminService;
 use App\Http\Services\AppointmentService;
+use App\Rules\AllowedEmailDomain;
+use App\Rules\PersonName;
+use App\Rules\StrongPassword;
 
 class AdminController extends Controller
 {
@@ -23,9 +26,9 @@ class AdminController extends Controller
     {
 
         $data = $request->validate([
-            'name'              => ['required', 'string', 'min:2', 'max:255', 'regex:/^[\pL\s\-\.]+$/u'],
-            'email'             => ['required', 'email', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|aust\.edu|pulseportal\.com)$/'],
-            'password'          => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+            'name'              => ['required', 'string', 'min:2', 'max:255', new PersonName()],
+            'email'             => ['required', 'email', 'unique:users,email', new AllowedEmailDomain()],
+            'password'          => ['required', 'string', new StrongPassword()],
             'specialization'    => 'required|string|max:100',
             'department'        => 'required|string|max:100',
             'bio'               => 'nullable|string|max:1000',
@@ -35,10 +38,6 @@ class AdminController extends Controller
             'availability_days.*' => 'string|in:SUN,MON,TUE,WED,THU,FRI,SAT',
             'service_start_time' => 'nullable|date_format:H:i',
             'service_end_time' => 'nullable|date_format:H:i|after:service_start_time',
-        ], [
-            'email.regex'    => 'Only gmail.com, yahoo.com, outlook.com, aust.edu, and pulseportal.com emails are allowed.',
-            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
-            'name.regex'     => 'Name can only contain letters, spaces, hyphens, and dots.',
         ]);
 
         $result = $this->adminService->createDoctor($data);
@@ -55,16 +54,12 @@ class AdminController extends Controller
     {
 
         $data = $request->validate([
-            'name'       => ['required', 'string', 'min:2', 'max:255', 'regex:/^[\pL\s\-\.]+$/u'],
-            'email'      => ['required', 'email', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|aust\.edu|pulseportal\.com)$/'],
-            'password'   => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+            'name'       => ['required', 'string', 'min:2', 'max:255', new PersonName()],
+            'email'      => ['required', 'email', 'unique:users,email', new AllowedEmailDomain()],
+            'password'   => ['required', 'string', new StrongPassword()],
             'admin_role' => 'required|string|max:100',
             'department' => 'required_unless:admin_role,Super Admin,Front Desk Admin|nullable|string|max:100',
             'phone'      => 'nullable|string|max:20',
-        ], [
-            'email.regex'    => 'Only gmail.com, yahoo.com, outlook.com, aust.edu, and pulseportal.com emails are allowed.',
-            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
-            'name.regex'     => 'Name can only contain letters, spaces, hyphens, and dots.',
         ]);
 
         if (in_array($data['admin_role'], ['Super Admin', 'Front Desk Admin'], true)) {
