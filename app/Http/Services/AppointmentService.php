@@ -16,21 +16,33 @@ class AppointmentService
 {
     public function createAppointment(int $patientId, array $data): Appointment
     {
-        $appointment = Appointment::create([
-            'patient_id'       => $patientId,
-            'doctor_id'        => $data['doctor_id'],
-            'appointment_date' => $data['appointment_date'],
-            'appointment_time' => $data['appointment_time'],
-            'type'             => $data['type'] ?? 'in_person',
-            'symptoms'         => $data['symptoms'],
-            'status'           => 'pending',
-        ]);
+        try {
+            $appointment = Appointment::create([
+                'patient_id'       => $patientId,
+                'doctor_id'        => $data['doctor_id'],
+                'appointment_date' => $data['appointment_date'],
+                'appointment_time' => $data['appointment_time'],
+                'type'             => $data['type'] ?? 'in_person',
+                'symptoms'         => $data['symptoms'],
+                'status'           => 'pending',
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Unique index (doctor_id, appointment_date, appointment_time)
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'appointment_time' => 'This time slot has just been booked by another patient. Please choose a different slot.',
+                ]);
+            }
+
+            throw $e;
+        }
 
         // Load relationships needed for event + notification creation
         $appointment->load(['patient.user', 'doctor.user']);
 
-        // Real-time broadcast
-        broadcast(new AppointmentRequested($appointment))->toOthers();
+        // Real-time broadcast — a Pusher outage must never fail the booking
+        // (the appointment is already saved).
+        $this->safeBroadcast(new AppointmentRequested($appointment));
 
         // Persist notification for every targeted admin
         $department = $appointment->doctor->department;
@@ -54,9 +66,25 @@ class AppointmentService
             ]);
         }
 
-        Mail::to($appointment->patient->user->email)->send(new PatientAppointmentDetails($appointment));
+        try {
+            Mail::to($appointment->patient->user->email)->send(new PatientAppointmentDetails($appointment));
+        } catch (\Throwable $e) {
+            \Log::warning('Appointment confirmation mail failed: ' . $e->getMessage());
+        }
 
         return $appointment;
+    }
+
+    /**
+     * Broadcast without letting a realtime-provider outage fail the request.
+     */
+    private function safeBroadcast($event): void
+    {
+        try {
+            broadcast($event)->toOthers();
+        } catch (\Throwable $e) {
+            \Log::warning('Broadcast failed (non-fatal): ' . $e->getMessage());
+        }
     }
 
     public function getPatientAppointments(int $patientId)
@@ -160,13 +188,21 @@ class AppointmentService
 
         if (!$appointment) return null;
 
-        $appointment->update(['status' => $status]);
+        // Cancelling frees the slot on the unique index (doctor_id, date, time).
+        if ($status === 'cancelled') {
+            $appointment->update([
+                'status' => 'cancelled',
+                'appointment_time' => null,
+            ]);
+        } else {
+            $appointment->update(['status' => $status]);
+        }
 
         // Reload for relationships
         $appointment->load(['patient.user', 'doctor.user']);
 
-        // Notify the patient via WebSocket
-        broadcast(new AppointmentStatusUpdated($appointment))->toOthers();
+        // Notify the patient via WebSocket (non-fatal on provider outage)
+        $this->safeBroadcast(new AppointmentStatusUpdated($appointment));
 
         // Persist notification for the patient
         $doctorName  = $appointment->doctor->user->name;
@@ -183,10 +219,14 @@ class AppointmentService
 
         // Notify the patient via email for major status changes
         if (in_array($status, ['confirmed', 'cancelled'])) {
-            Mail::to($appointment->patient->user->email)->send(new PatientAppointmentDetails($appointment));
+            try {
+                Mail::to($appointment->patient->user->email)->send(new PatientAppointmentDetails($appointment));
+            } catch (\Throwable $e) {
+                \Log::warning('Appointment status mail failed: ' . $e->getMessage());
+            }
 
             if ($status === 'confirmed') {
-                broadcast(new AppointmentConfirmedForDoctor($appointment))->toOthers();
+                $this->safeBroadcast(new AppointmentConfirmedForDoctor($appointment));
 
                 // Persist notification for the doctor
                 $patientName  = $appointment->patient->user->name;
@@ -207,69 +247,6 @@ class AppointmentService
         return $appointment;
     }
 
-    /**
-     * Regenerate the patient's medical_history field using AI.
-     * Gathers all completed appointments and produces a concise summary.
-     */
-    private function regenerateMedicalHistory(int $patientId): void
-    {
-        $patient = Patient::find($patientId);
-        if (!$patient) return;
-
-        // Gather all completed appointments with their details
-        $completedAppointments = Appointment::with(['doctor.user', 'visitNote', 'prescriptions'])
-            ->where('patient_id', $patientId)
-            ->where('status', 'completed')
-            ->orderBy('appointment_date', 'asc')
-            ->get();
-
-        if ($completedAppointments->isEmpty()) return;
-
-        // Build a context string from appointment data
-        $appointmentSummaries = $completedAppointments->map(function ($appt) {
-            $parts = [
-                "Date: {$this->formatAppointmentDate($appt->appointment_date)}",
-                "Doctor: " . ($appt->doctor->user->name ?? 'Unknown'),
-                "Specialization: " . ($appt->doctor->specialization ?? 'Unknown'),
-                "Symptoms: {$appt->symptoms}",
-            ];
-
-            if ($appt->visitNote) {
-                $parts[] = "Doctor Notes: {$appt->visitNote->doctor_notes}";
-            }
-
-            if ($appt->prescriptions->isNotEmpty()) {
-                $meds = $appt->prescriptions->map(fn($p) =>
-                    ($p->disease_or_problem ? "{$p->disease_or_problem}: " : '') . $p->medication
-                )->implode('; ');
-                $parts[] = "Prescriptions: {$meds}";
-            }
-
-            return implode(' | ', $parts);
-        })->implode("\n");
-
-        $systemPrompt = <<<PROMPT
-You are a medical records assistant. Your job is to write a concise medical history summary for a patient based on their appointment records.
-
-Guidelines:
-- Write in third person (e.g., "Patient has a history of...")
-- Keep it to 2-4 sentences maximum
-- Highlight key conditions, recurring issues, and treatments
-- Mention relevant specializations consulted
-- Be factual and concise — this will be displayed on the patient's profile
-- If the patient has had only one appointment, still summarize it meaningfully
-- Do NOT include dates unless they are medically relevant
-PROMPT;
-
-        $userMessage = "Generate a medical history summary based on these appointment records:\n\n{$appointmentSummaries}";
-
-        $aiService = app(AiService::class);
-        $summary   = $aiService->chat($systemPrompt, $userMessage);
-
-        // Update the patient's medical_history field
-        $patient->update(['medical_history' => trim($summary)]);
-    }
-
     public function cancelAppointment(int $appointmentId, int $patientId): ?Appointment
     {
         $appointment = Appointment::where('id', $appointmentId)
@@ -279,10 +256,14 @@ PROMPT;
 
         if (!$appointment) return null;
 
-        $appointment->update(['status' => 'cancelled']);
+        // Null the time so the slot frees on the unique index.
+        $appointment->update([
+            'status' => 'cancelled',
+            'appointment_time' => null,
+        ]);
         $appointment->load(['patient.user', 'doctor.user']);
 
-        broadcast(new AppointmentStatusUpdated($appointment))->toOthers();
+        $this->safeBroadcast(new AppointmentStatusUpdated($appointment));
 
         // Persist cancellation notification for the patient
         $doctorName = $appointment->doctor->user->name;
@@ -301,10 +282,14 @@ PROMPT;
 
     public function getBookedSlots(int $doctorId, string $date): array
     {
+        // Every non-cancelled appointment blocks its slot (pending included).
         return Appointment::where('doctor_id', $doctorId)
             ->where('appointment_date', $date)
-            ->where('status', 'confirmed')
+            ->where('status', '!=', 'cancelled')
             ->pluck('appointment_time')
+            ->map(fn ($time) => substr((string) $time, 0, 5))
+            ->unique()
+            ->values()
             ->toArray();
     }
 

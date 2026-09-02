@@ -46,10 +46,12 @@ class AppointmentBookingTest extends TestCase
 
     public function test_patient_can_book_appointment()
     {
+        $date = now()->addWeek()->toDateString();
+
         $response = $this->actingAs($this->patientUser, 'api')
             ->postJson('/api/patient/appointments', [
                 'doctor_id' => $this->doctor->id,
-                'appointment_date' => '2026-05-20',
+                'appointment_date' => $date,
                 'appointment_time' => '10:00',
                 'type' => 'in_person',
                 'symptoms' => 'I have a mild chest pain.'
@@ -61,7 +63,7 @@ class AppointmentBookingTest extends TestCase
         $this->assertDatabaseHas('appointments', [
             'patient_id' => $this->patient->id,
             'doctor_id' => $this->doctor->id,
-            'appointment_date' => '2026-05-20 00:00:00'
+            'appointment_date' => $date . ' 00:00:00'
         ]);
     }
 
@@ -77,7 +79,7 @@ class AppointmentBookingTest extends TestCase
         $response = $this->actingAs($incompleteUser, 'api')
             ->postJson('/api/patient/appointments', [
                 'doctor_id' => $this->doctor->id,
-                'appointment_date' => '2026-05-20',
+                'appointment_date' => now()->addWeek()->toDateString(),
                 'appointment_time' => '10:00'
             ]);
 
@@ -90,7 +92,7 @@ class AppointmentBookingTest extends TestCase
         Appointment::create([
             'patient_id' => $this->patient->id,
             'doctor_id' => $this->doctor->id,
-            'appointment_date' => '2026-05-20',
+            'appointment_date' => now()->addWeek()->toDateString(),
             'appointment_time' => '10:00',
             'type' => 'in_person',
             'symptoms' => 'Regular checkup',

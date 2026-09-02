@@ -18,8 +18,6 @@ class AppointmentController extends Controller
     // POST /api/patient/appointments
     public function store(Request $request)
     {
-        $data = $request->all();
-
         $user    = auth()->user();
         $patient = $user->patient;
 
@@ -29,6 +27,14 @@ class AppointmentController extends Controller
                 'message' => 'Patient profile not found.',
             ], 404);
         }
+
+        $data = $request->validate([
+            'doctor_id'        => 'required|integer|exists:doctors,id',
+            'appointment_date'  => 'required|date|after_or_equal:today',
+            'appointment_time' => ['required', 'date_format:H:i,H:i:s'],
+            'type'             => 'required|in:in_person,online',
+            'symptoms'         => 'required|string|min:5|max:2000',
+        ]);
 
         $appointment = $this->appointmentService->createAppointment($patient->id, $data);
 
@@ -76,9 +82,16 @@ class AppointmentController extends Controller
     // PATCH /api/doctor/appointments/{id}/status  (doctor-only)
     public function updateStatus(Request $request, $id)
     {
-        $data = $request->all();
+        $data = $request->validate([
+            'status' => 'required|in:confirmed,in_progress,completed,cancelled',
+        ]);
 
         $doctor      = auth()->user()->doctor;
+
+        if (!$doctor) {
+            return response()->json(['status' => 'error', 'message' => 'Doctor profile not found.'], 404);
+        }
+
         $appointment = $this->appointmentService->updateAppointmentStatus($id, $data['status'], $doctor->id);
 
         if (!$appointment) {
@@ -95,7 +108,12 @@ class AppointmentController extends Controller
     // PATCH /api/patient/appointments/{id}/cancel
     public function cancel($id)
     {
-        $patient     = auth()->user()->patient;
+        $patient = auth()->user()->patient;
+
+        if (!$patient) {
+            return response()->json(['status' => 'error', 'message' => 'Patient profile not found.'], 404);
+        }
+
         $appointment = $this->appointmentService->cancelAppointment($id, $patient->id);
 
         if (!$appointment) {
