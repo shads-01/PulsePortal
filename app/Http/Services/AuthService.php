@@ -5,6 +5,9 @@ namespace App\Http\Services;
 use App\Mail\PatientWelcomeMail;
 use App\Models\User;
 use App\Models\Patient;
+use App\Rules\AllowedEmailDomain;
+use App\Rules\PersonName;
+use App\Rules\StrongPassword;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -15,24 +18,20 @@ class AuthService
     public function registerPatient(array $data): array
     {
         $validator = Validator::make($data, [
-            'name'     => [
-                'required', 'string', 'min:2', 'max:255',
-                'regex:/^[\pL\s\-\.]+$/u',
-            ],
+            'name'     => ['required', 'string', 'min:2', 'max:255', new PersonName()],
             'email'    => [
-                'required', 
+                'required',
                 app()->environment('testing') ? 'email:rfc' : 'email:rfc,dns',
                 'unique:users,email',
-                'regex:/^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|aust\.edu|pulseportal\.com)$/',
+                new AllowedEmailDomain(),
             ],
             'password' => [
-                'required', 'string', 'min:8', 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+                'required',
+                'string',
+                new StrongPassword(),
+                'confirmed',
             ],
         ], [
-            'name.regex'     => 'Name can only contain letters, spaces, hyphens, and dots.',
-            'email.regex'    => 'Only gmail.com, yahoo.com, outlook.com, aust.edu, and pulseportal.com emails are allowed.',
-            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
             'password.min'   => 'Password must be at least 8 characters.',
             'email.unique'   => 'This email is already registered.',
         ]);

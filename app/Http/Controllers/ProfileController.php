@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\Admin;
+use App\Rules\AllowedEmailDomain;
+use App\Rules\PersonName;
+use App\Rules\StrongPassword;
 
 class ProfileController extends Controller
 {
@@ -46,27 +49,20 @@ class ProfileController extends Controller
                 'string',
                 'min:2',
                 'max:255',
-                'regex:/^[\pL\s\-\.]+$/u',
+                new PersonName(),
             ],
             'email'    => [
                 'sometimes',
                 'required',
                 'email',
                 'unique:users,email,' . $user->id,
-                'regex:/^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|aust\.edu|pulseportal\.com)$/',
+                new AllowedEmailDomain(),
             ],
             'password' => [
                 'nullable',
                 'string',
-                'min:8',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+                new StrongPassword(),
             ],
-        ], [
-            'name.regex'     => 'Name can only contain letters, spaces, hyphens, and dots.',
-            'email.regex'    => 'Only specific email domains are allowed (e.g. gmail.com).',
-            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
-            'password.min'   => 'Password must be at least 8 characters.',
-            'email.unique'   => 'This email is already taken.',
         ]);
 
         if ($request->has('name')) {
