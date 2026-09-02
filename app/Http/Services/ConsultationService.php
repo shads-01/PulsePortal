@@ -38,9 +38,13 @@ class ConsultationService
             // Update appointment status to in_progress
             $appointment->update(['status' => 'in_progress']);
 
-            // Broadcast websocket event to patient
+            // Broadcast websocket event to patient — outage must not fail the start
             $appointment->load(['patient.user', 'doctor.user']);
-            broadcast(new ConsultationStarted($appointment))->toOthers();
+            try {
+                broadcast(new ConsultationStarted($appointment))->toOthers();
+            } catch (\Throwable $e) {
+                \Log::warning('Consultation start broadcast failed (non-fatal): ' . $e->getMessage());
+            }
 
             // Persist notification for the patient
             $doctorName = $appointment->doctor->user->name;

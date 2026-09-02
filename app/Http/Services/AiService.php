@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * Supported providers (set AI_PROVIDER in .env):
  *   openai, gemini, anthropic, xai, mistral, ollama
  *
- * Required .env keys:
+ * Required .env keys (read via config/ai.php — safe under config:cache):
  *   AI_PROVIDER=gemini
  *   AI_API_KEY=your-key-here
  *   AI_MODEL=gemini-2.0-flash        (optional — sensible defaults per provider)
@@ -22,31 +22,11 @@ class AiService
     protected string $apiKey;
     protected string $model;
 
-    // ── Default models per provider ──────────────────────────────
-    private const DEFAULT_MODELS = [
-        'openai'    => 'gpt-4o-mini',
-        'gemini'    => 'gemini-2.0-flash',
-        'anthropic' => 'claude-haiku-4-5-20251001',
-        'xai'       => 'grok-3-mini',
-        'mistral'   => 'mistral-small-latest',
-        'ollama'    => 'llama3',
-    ];
-
-    // ── API base URLs ────────────────────────────────────────────
-    private const BASE_URLS = [
-        'openai'    => 'https://api.openai.com/v1',
-        'gemini'    => 'https://generativelanguage.googleapis.com/v1beta',
-        'anthropic' => 'https://api.anthropic.com/v1',
-        'xai'       => 'https://api.x.ai/v1',
-        'mistral'   => 'https://api.mistral.ai/v1',
-        'ollama'    => 'http://localhost:11434/api',
-    ];
-
     public function __construct()
     {
-        $this->provider = strtolower(config('app.ai_provider', env('AI_PROVIDER', 'gemini')));
-        $this->apiKey   = config('app.ai_api_key', env('AI_API_KEY', ''));
-        $this->model    = config('app.ai_model', env('AI_MODEL', self::DEFAULT_MODELS[$this->provider] ?? 'gpt-4o-mini'));
+        $this->provider = strtolower((string) config('ai.provider'));
+        $this->apiKey   = (string) config('ai.api_key');
+        $this->model    = (string) (config('ai.model') ?: config('ai.default_models.' . $this->provider, 'gpt-4o-mini'));
     }
 
     // ─── Public API ──────────────────────────────────────────────
@@ -112,7 +92,7 @@ class AiService
             'Content-Type'  => 'application/json',
         ])
         ->timeout(60)
-        ->post(self::BASE_URLS[$this->provider] . '/chat/completions', [
+        ->post(config('ai.base_urls.' . $this->provider) . '/chat/completions', [
             'model'       => $this->model,
             'messages'    => $messages,
             'temperature' => 0.7,
@@ -147,7 +127,7 @@ class AiService
             'parts' => [['text' => $userMessage]],
         ];
 
-        $url = self::BASE_URLS['gemini'] . "/models/{$this->model}:generateContent?key={$this->apiKey}";
+        $url = config('ai.base_urls.gemini') . "/models/{$this->model}:generateContent?key={$this->apiKey}";
 
         $response = Http::withHeaders(['Content-Type' => 'application/json'])
             ->timeout(60)
@@ -182,7 +162,7 @@ class AiService
             'Content-Type'      => 'application/json',
         ])
         ->timeout(60)
-        ->post(self::BASE_URLS['anthropic'] . '/messages', [
+        ->post(config('ai.base_urls.anthropic') . '/messages', [
             'model'      => $this->model,
             'system'     => $systemPrompt,
             'messages'   => $messages,
@@ -206,7 +186,7 @@ class AiService
 
         $response = Http::withHeaders(['Content-Type' => 'application/json'])
             ->timeout(120)
-            ->post(self::BASE_URLS['ollama'] . '/chat', [
+            ->post(config('ai.base_urls.ollama') . '/chat', [
                 'model'    => $this->model,
                 'messages' => $messages,
                 'stream'   => false,

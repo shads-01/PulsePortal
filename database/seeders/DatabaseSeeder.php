@@ -399,6 +399,16 @@ class DatabaseSeeder extends Seeder
         // Bulk Random Appointments
         $symptomsArr = ['Fever', 'Chest pain', 'Stomach ache', 'Checkup', 'Toothache', 'Migraine'];
 
+        // Pre-register every fixed appointment already inserted above so the
+        // random loop can never collide with them on the unique slot index.
+        $usedSlots = Appointment::query()
+            ->whereNotNull('appointment_time')
+            ->get(['doctor_id', 'appointment_date', 'appointment_time'])
+            ->mapWithKeys(fn ($appt) => [
+                $appt->doctor_id . '|' . $appt->appointment_date->format('Y-m-d') . '|' . $appt->appointment_time => true,
+            ])
+            ->all();
+
         $bulkPrescriptions = [
             [
                 'disease_or_problem' => 'Acute Fever',
@@ -459,11 +469,22 @@ class DatabaseSeeder extends Seeder
             $doc = $doctorsList[array_rand($doctorsList)];
             $symptomIndex = array_rand($symptomsArr);
 
+            // Cancelled rows must release their slot on the unique index
+            // (doctor_id, appointment_date, appointment_time).
+            do {
+                $date = Carbon::now()->addDays(rand(-30, 30))->format('Y-m-d');
+                $time = $status === 'cancelled'
+                    ? null
+                    : sprintf("%02d:%02d:00", rand(9, 16), rand(0, 3) * 15);
+                $slotKey = $doc->id . '|' . $date . '|' . $time;
+            } while ($time !== null && isset($usedSlots[$slotKey]));
+            $usedSlots[$slotKey] = true;
+
             $appt = Appointment::create([
                 'patient_id'       => $patient->id,
                 'doctor_id'        => $doc->id,
-                'appointment_date' => Carbon::now()->addDays(rand(-30, 30))->format('Y-m-d'),
-                'appointment_time' => sprintf("%02d:00:00", rand(9, 16)),
+                'appointment_date' => $date,
+                'appointment_time' => $time,
                 'type'             => rand(0, 1) ? 'in_person' : 'online',
                 'status'           => $status,
                 'symptoms'         => $symptomsArr[$symptomIndex],
@@ -488,11 +509,13 @@ class DatabaseSeeder extends Seeder
 
         // --- 6. ONLINE SETUP TEST DATA ---
         // 1. Confirmed Online Appointment (Today, Joinable)
+        // :20 minute keeps this off the unique slot index — every other
+        // seeded cardio-today slot is on the hour or :30/:15-minute grid.
         $confirmedOnline = Appointment::create([
             'patient_id'       => $patient->id,
             'doctor_id'        => $doctorCardio->id,
             'appointment_date' => now()->toDateString(),
-            'appointment_time' => now()->addHour()->format('H:00:00'),
+            'appointment_time' => now()->addHour()->format('H') . ':20:00',
             'type'             => 'online',
             'status'           => 'confirmed',
             'symptoms'         => 'Test: Regular checkup for online setup validation.',
@@ -565,6 +588,12 @@ class DatabaseSeeder extends Seeder
 
         // 6. Multiple Confirmed Online for Today (Stress Test)
         foreach (['16:00:00', '17:00:00', '18:00:00'] as $time) {
+            $slotKey = $doctorCardio->id . '|' . now()->toDateString() . '|' . $time;
+            if (isset($usedSlots[$slotKey])) {
+                continue; // random block already claimed this exact slot
+            }
+            $usedSlots[$slotKey] = true;
+
             Appointment::create([
                 'patient_id'       => $patient->id,
                 'doctor_id'        => $doctorCardio->id,

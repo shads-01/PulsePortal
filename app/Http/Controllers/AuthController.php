@@ -52,11 +52,16 @@ class AuthController extends Controller
                 'message' => 'Login successful',
                 'data'    => $result,
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
+            \Log::error('Login error: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
             return response()->json([
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'status'  => 'error',
+                'message' => 'Login failed due to a server error. Please try again.',
             ], 500);
         }
     }

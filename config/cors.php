@@ -7,9 +7,9 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
+    | Here you may configure your settings for cross-origin resource sharing,
+    | or "CORS". This determines which cross-origin operations may execute
+    | in browsers. You are free to adjust these settings as needed.
     |
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     |
@@ -19,7 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // Only the configured frontend origin may call the API.
+    // Set FRONTEND_URL in .env (e.g. http://localhost:5173).
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL', 'http://localhost:5173'),
+        env('APP_URL', 'http://localhost:8000'),
+    ]),
 
     'allowed_origins_patterns' => [],
 
